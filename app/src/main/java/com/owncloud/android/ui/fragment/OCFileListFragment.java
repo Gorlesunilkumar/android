@@ -74,6 +74,7 @@ import com.owncloud.android.lib.common.OwnCloudClient;
 import com.owncloud.android.lib.common.operations.RemoteOperation;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult;
 import com.owncloud.android.lib.common.utils.Log_OC;
+import com.owncloud.android.lib.resources.declarativeui.Endpoint;
 import com.owncloud.android.lib.resources.e2ee.ToggleEncryptionRemoteOperation;
 import com.owncloud.android.lib.resources.files.SearchRemoteOperation;
 import com.owncloud.android.lib.resources.files.ToggleFavoriteRemoteOperation;
@@ -652,8 +653,10 @@ public class OCFileListFragment extends ExtendedListFragment implements
     public void openActionsMenu(final int filesCount, final Set<OCFile> checkedFiles, final boolean isOverflow) {
         throttler.run("overflowClick", () -> {
             final var actionsToHide = FileAction.Companion.getFileListActionsToHide(checkedFiles);
+            List<Endpoint> endpoints = getCapabilities().getDeclarativeUiContextMenu();
+
             final var childFragmentManager = getChildFragmentManager();
-            final var actionBottomSheet = FileActionsBottomSheet.newInstance(filesCount, checkedFiles, isOverflow, actionsToHide)
+            final var actionBottomSheet = FileActionsBottomSheet.newInstance(filesCount, checkedFiles, isOverflow, actionsToHide, endpoints)
                 .setResultListener(childFragmentManager, this, (id) -> onFileActionChosen(id, checkedFiles));
 
             if (FragmentExtensionsKt.isDialogFragmentReady(this)) {

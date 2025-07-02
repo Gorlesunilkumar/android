@@ -33,7 +33,9 @@ import com.nextcloud.android.common.ui.theme.utils.ColorRole
 import com.nextcloud.client.account.CurrentAccountProvider
 import com.nextcloud.client.di.Injectable
 import com.nextcloud.client.di.ViewModelFactory
+import com.nextcloud.ui.fileactions.FileActionsViewModel
 import com.nextcloud.utils.extensions.setVisibleIf
+import com.nextcloud.ui.fileactions.FileActionsViewModel.Companion.ARG_ENDPOINTS
 import com.owncloud.android.R
 import com.owncloud.android.databinding.FileActionsBottomSheetBinding
 import com.owncloud.android.databinding.FileActionsBottomSheetItemBinding
@@ -41,6 +43,7 @@ import com.owncloud.android.datamodel.FileDataStorageManager
 import com.owncloud.android.datamodel.OCFile
 import com.owncloud.android.datamodel.SyncedFolderProvider
 import com.owncloud.android.datamodel.ThumbnailsCacheManager
+import com.owncloud.android.lib.resources.declarativeui.Endpoint
 import com.owncloud.android.lib.resources.files.model.FileLockType
 import com.owncloud.android.ui.activity.ComponentsGetter
 import com.owncloud.android.utils.DisplayUtils
@@ -78,6 +81,8 @@ class FileActionsBottomSheet :
 
     private val thumbnailAsyncTasks = mutableListOf<ThumbnailsCacheManager.ThumbnailGenerationTask>()
 
+    private var endpoints: List<Endpoint>? = mutableListOf()
+    
     fun interface ResultListener {
         fun onResult(@IdRes actionId: Int)
     }
@@ -93,6 +98,8 @@ class FileActionsBottomSheet :
         }
 
         viewModel.load(requireArguments(), componentsGetter)
+
+        endpoints = arguments?.getParcelableArrayList<List<Endpoint>>(ARG_ENDPOINTS) as MutableList<Endpoint>
 
         val bottomSheetDialog = dialog as BottomSheetDialog
         bottomSheetDialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
@@ -200,6 +207,10 @@ class FileActionsBottomSheet :
                 val view = inflateActionView(action)
                 binding.fileActionsList.addView(view)
             }
+            // add declarative ui
+            
+            val test = inflateDeclarativeActionView()
+            binding.fileActionsList.addView(test)
         }
     }
 
@@ -303,6 +314,25 @@ class FileActionsBottomSheet :
         return itemBinding.root
     }
 
+    private fun inflateDeclarativeActionView(title: String): View {
+        val itemBinding = FileActionsBottomSheetItemBinding.inflate(layoutInflater, binding.fileActionsList, false)
+            .apply {
+                // root.setOnClickListener {
+                //     viewModel.onClick(action)
+                // }
+                text.text = title
+                // if (action.icon != null) {
+                //     val drawable =
+                //         viewThemeUtils.platform.tintDrawable(
+                //             requireContext(),
+                //             AppCompatResources.getDrawable(requireContext(), action.icon)!!
+                //         )
+                //     icon.setImageDrawable(drawable)
+                // }
+            }
+        return itemBinding.root
+    }
+
     private fun dispatchActionClick(id: Int?) {
         if (id != null) {
             setFragmentResult(REQUEST_KEY, bundleOf(RESULT_KEY_ACTION_ID to id))
@@ -323,7 +353,7 @@ class FileActionsBottomSheet :
             isOverflow: Boolean,
             @IdRes
             additionalToHide: List<Int>? = null
-        ): FileActionsBottomSheet = newInstance(1, listOf(file), isOverflow, additionalToHide, true)
+        ): FileActionsBottomSheet = newInstance(1, listOf(file), isOverflow, additionalToHide, true, emptyList())
 
         @JvmStatic
         @JvmOverloads
@@ -333,13 +363,15 @@ class FileActionsBottomSheet :
             isOverflow: Boolean,
             @IdRes
             additionalToHide: List<Int>? = null,
-            inSingleFileFragment: Boolean = false
+            inSingleFileFragment: Boolean = false,
+            endpoints: List<Endpoint>
         ): FileActionsBottomSheet = FileActionsBottomSheet().apply {
             val argsBundle = bundleOf(
                 FileActionsViewModel.ARG_ALL_FILES_COUNT to numberOfAllFiles,
                 FileActionsViewModel.ARG_FILES to ArrayList<OCFile>(files),
                 FileActionsViewModel.ARG_IS_OVERFLOW to isOverflow,
-                FileActionsViewModel.ARG_IN_SINGLE_FILE_FRAGMENT to inSingleFileFragment
+                FileActionsViewModel.ARG_IN_SINGLE_FILE_FRAGMENT to inSingleFileFragment,
+                FileActionsViewModel.ARG_ENDPOINTS to endpoints
             )
             additionalToHide?.let {
                 argsBundle.putIntArray(FileActionsViewModel.ARG_ADDITIONAL_FILTER, additionalToHide.toIntArray())
