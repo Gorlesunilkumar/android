@@ -18,21 +18,30 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.google.gson.Gson
-import com.nextcloud.android.lib.resources.declarativeui.GetDeclarativeUiJsonOperation
+import androidx.lifecycle.coroutineScope
+import com.google.gson.GsonBuilder
 import com.nextcloud.client.assistant.AssistantScreen
 import com.nextcloud.client.assistant.AssistantViewModel
 import com.nextcloud.client.assistant.repository.AssistantRepository
+import com.nextcloud.common.JSONRequestBody
 import com.nextcloud.common.NextcloudClient
+import com.nextcloud.operations.GetMethod
+import com.nextcloud.operations.PostMethod
 import com.nextcloud.ui.DeclarativeUiScreen
 import com.nextcloud.utils.extensions.getSerializableArgument
 import com.owncloud.android.R
 import com.owncloud.android.databinding.ActivityComposeBinding
+import com.owncloud.android.lib.resources.declarativeui.DeclarativeUI
+import com.owncloud.android.lib.resources.declarativeui.Element
+import com.owncloud.android.lib.resources.declarativeui.ElementTypeAdapter
 import com.owncloud.android.lib.resources.declarativeui.Endpoint
+import com.owncloud.android.lib.resources.status.Method
 import com.owncloud.android.ui.activity.DrawerActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.RequestBody
+import java.net.HttpURLConnection.HTTP_OK
 
 class ComposeActivity : DrawerActivity() {
 
@@ -41,7 +50,10 @@ class ComposeActivity : DrawerActivity() {
     companion object {
         const val DESTINATION = "DESTINATION"
         const val TITLE = "TITLE"
+        const val TITLE_STRING = "TITLE_STRING"
         const val ARGS_ENDPOINT = "ARGS_ENDPOINT"
+        const val ARGS_FILE_ID = "ARGS_FILE_ID"
+        const val ARGS_FILE_PATH = "ARGS_FILE_PATH"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,13 +62,42 @@ class ComposeActivity : DrawerActivity() {
         setContentView(binding.root)
 
         val destination = intent.getSerializableArgument(DESTINATION, ComposeDestination::class.java)
-        val titleId = intent.getIntExtra(TITLE, R.string.empty)
+        var title = intent.getStringExtra(TITLE_STRING)
 
-        setupDrawer()
-
-        setupToolbarShowOnlyMenuButtonAndTitle(getString(titleId)) {
-            openDrawer()
+        if (title == null || title.isEmpty()) {
+            title = getString(intent.getIntExtra(TITLE, R.string.empty))
         }
+
+        if (destination == ComposeDestination.AssistantScreen) {
+            setupDrawer()
+
+            setupToolbarShowOnlyMenuButtonAndTitle(title) {
+                openDrawer()
+            }
+        } else {
+            setSupportActionBar(null)
+            if (findViewById<View?>(R.id.appbar) != null) {
+                findViewById<View?>(R.id.appbar)?.visibility = View.GONE
+            }
+        }
+
+        // if (false) {
+        //     val actionBar = getDelegate().supportActionBar
+        //     actionBar?.setDisplayHomeAsUpEnabled(true)
+        //     actionBar?.setDisplayShowTitleEnabled(true)
+        //
+        //     val menuIcon = ResourcesCompat.getDrawable(
+        //         getResources(),
+        //         R.drawable.ic_arrow_back,
+        //         null
+        //     )
+        //     viewThemeUtils.androidx.themeActionBar(
+        //         this,
+        //         actionBar!!,
+        //         title!!,
+        //         menuIcon!!
+        //     )
+        // }
 
         binding.composeView.setContent {
             MaterialTheme(
@@ -70,9 +111,10 @@ class ComposeActivity : DrawerActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         android.R.id.home -> {
-            toggleDrawer()
+            super.onBackPressed()
             true
         }
+
         else -> super.onOptionsItemSelected(item)
     }
 
@@ -102,26 +144,79 @@ class ComposeActivity : DrawerActivity() {
         } else if (destination == ComposeDestination.DeclarativeUi) {
             binding.bottomNavigation.visibility = View.GONE
 
-            val endpoint : Endpoint? = intent.getParcelableExtra(ARGS_ENDPOINT)
+            val endpoint: Endpoint? = intent.getParcelableExtra(ARGS_ENDPOINT)
+            val fileId = intent.getLongExtra(ARGS_FILE_ID, -1)
+            val remotePath = intent.getStringExtra(ARGS_FILE_PATH).orEmpty()
 
             if (nextcloudClient != null && endpoint != null) {
-                val string = """{
-  "Button": {
-    "label": "Submit",
-    "type": "primary",
-  },
-  "Image": {
-    "url": "/core/img/logo/logo.png"
-  }
-}"""
-                  
-                        DeclarativeUiScreen(Gson().fromJson(string))
+                var test by remember { mutableStateOf<String?>(null) }
+                var baseUrl by remember { mutableStateOf<String?>(null) }
+                lifecycle.coroutineScope.launch(Dispatchers.IO) {
+                    // construct url
+                    var url = nextcloudClient!!.baseUri.toString() + endpoint.url
+                    baseUrl = nextcloudClient!!.baseUri.toString()
+
+                    val method = when (endpoint.method) {
+                        Method.GET -> {
+                            endpoint.params!!.forEach {
+                                when (it.value) {
+                                    "{fileId}" -> url = url.replace(it.key, fileId.toString(), false)
+                                    "{filePath}" -> url = url.replace(it.key, remotePath, false)
+                                }
+                            }
+                            GetMethod(url, true)
+                        }
+
+                        Method.POST -> {
+                            val requestBody = if (endpoint.params?.isNotEmpty() == true) {
+                                val jsonRequestBody = JSONRequestBody()
+                                endpoint.params!!.forEach {
+                                    when (it.value) {
+                                        "{filePath}" -> jsonRequestBody.put(it.key, remotePath)
+                                        "{fileId}" -> jsonRequestBody.put(it.key, fileId.toString())
+                                    }
+                                }
+
+                                jsonRequestBody.get()
+                            } else {
+                                RequestBody.EMPTY
+                            }
+
+                            PostMethod(url, true, requestBody)
+                        }
+
+                        else -> GetMethod(url, true)
+                    }
+
+                    val result = try {
+                        nextcloudClient?.execute(method)
+                    } catch (exception: Exception) {
+                        val e = exception
+                        TODO("Add error handling here")
+                    }
+                    test = method.getResponseBodyAsString()
+
+                    val success = result == HTTP_OK
+
+
+                    if (success) {
+                        //DeclarativeUiScreen(parseResult(test))
                     }
                 }
-                   
-                //}
-                
+
+                if (test != null) {
+                    DeclarativeUiScreen(parseResult(test), baseUrl!!)
+                }
             }
         }
+    }
+
+    fun parseResult(response: String?): DeclarativeUI {
+        val gson =
+            GsonBuilder()
+                .registerTypeHierarchyAdapter(Element::class.java, ElementTypeAdapter())
+                .create()
+
+        return gson.fromJson(response, DeclarativeUI::class.java)
     }
 }

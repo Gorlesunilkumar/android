@@ -10,8 +10,11 @@ package com.nextcloud.ui.fileactions
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.PictureDrawable
 import android.os.Bundle
 import android.text.style.StyleSpan
 import android.view.LayoutInflater
@@ -34,9 +37,11 @@ import com.nextcloud.android.common.ui.theme.utils.ColorRole
 import com.nextcloud.client.account.CurrentAccountProvider
 import com.nextcloud.client.di.Injectable
 import com.nextcloud.client.di.ViewModelFactory
-import com.nextcloud.ui.fileactions.FileActionsViewModel
-import com.nextcloud.utils.extensions.setVisibleIf
+import com.nextcloud.ui.composeActivity.ComposeActivity
+import com.nextcloud.ui.composeActivity.ComposeDestination
 import com.nextcloud.ui.fileactions.FileActionsViewModel.Companion.ARG_ENDPOINTS
+import com.nextcloud.utils.GlideHelper
+import com.nextcloud.utils.extensions.setVisibleIf
 import com.owncloud.android.R
 import com.owncloud.android.databinding.FileActionsBottomSheetBinding
 import com.owncloud.android.databinding.FileActionsBottomSheetItemBinding
@@ -44,6 +49,7 @@ import com.owncloud.android.datamodel.FileDataStorageManager
 import com.owncloud.android.datamodel.OCFile
 import com.owncloud.android.datamodel.SyncedFolderProvider
 import com.owncloud.android.datamodel.ThumbnailsCacheManager
+import com.owncloud.android.lib.common.OwnCloudClientManagerFactory
 import com.owncloud.android.lib.resources.declarativeui.Endpoint
 import com.owncloud.android.lib.resources.files.model.FileLockType
 import com.owncloud.android.ui.activity.ComponentsGetter
@@ -51,6 +57,10 @@ import com.owncloud.android.utils.DisplayUtils
 import com.owncloud.android.utils.DisplayUtils.AvatarGenerationListener
 import com.owncloud.android.utils.FileStorageUtils
 import com.owncloud.android.utils.theme.ViewThemeUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class FileActionsBottomSheet :
@@ -211,7 +221,7 @@ class FileActionsBottomSheet :
             // add declarative ui
             if (endpoints != null) {
                 for(val e in endpoints) {
-                    val ui = inflateDeclarativeActionView(e.name)
+                    val ui = inflateDeclarativeActionView(e)
                     binding.fileActionsList.addView(ui)
                 }
             }
@@ -319,24 +329,58 @@ class FileActionsBottomSheet :
         return itemBinding.root
     }
 
-    private fun inflateDeclarativeActionView(title: String): View {
+    private fun inflateDeclarativeActionView(endpoint: Endpoint): View {
         val itemBinding = FileActionsBottomSheetItemBinding.inflate(layoutInflater, binding.fileActionsList, false)
             .apply {
                 root.setOnClickListener {
                     val composeActivity = Intent(context, ComposeActivity::class.java)
                     composeActivity.putExtra(ComposeActivity.DESTINATION, ComposeDestination.DeclarativeUi)
-                    composeActivity.putExtra(ComposeActivity.TITLE, title)
+                    composeActivity.putExtra(ComposeActivity.ARGS_ENDPOINT, endpoint)
+                    if (viewModel.uiState.value is FileActionsViewModel.UiState.LoadedForSingleFile) {
+                        composeActivity.putExtra(
+                            ComposeActivity.ARGS_FILE_ID,
+                            (viewModel.uiState.value as FileActionsViewModel.UiState.LoadedForSingleFile).titleFile?.localId
+                        )
+
+                        composeActivity.putExtra(
+                            ComposeActivity.ARGS_FILE_PATH,
+                            (viewModel.uiState.value as FileActionsViewModel.UiState.LoadedForSingleFile).titleFile?.remotePath
+                        )
+                    }
+                    composeActivity.putExtra(ComposeActivity.TITLE, endpoint.name)
                     startActivity(composeActivity)
+                    dismiss()
                 }
-                text.text = title
-                // if (action.icon != null) {
-                //     val drawable =
-                //         viewThemeUtils.platform.tintDrawable(
-                //             requireContext(),
-                //             AppCompatResources.getDrawable(requireContext(), action.icon)!!
-                //         )
-                //     icon.setImageDrawable(drawable)
-                // }
+                text.text = endpoint.name
+
+                if (endpoint.icon != null) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val client = OwnCloudClientManagerFactory.getDefaultSingleton()
+                            .getNextcloudClientFor(currentUserProvider.user.toOwnCloudAccount(), context)
+
+                        val drawable =
+                            GlideHelper.getDrawable(requireContext(), client, client.baseUri.toString() + endpoint.icon)
+                                ?.mutate()
+                        val tintedDrawable = viewThemeUtils.platform.tintDrawable(
+                            requireContext(),
+                            drawable ?: AppCompatResources.getDrawable(requireContext(), R.drawable.ic_activity)!!
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            val pd = (tintedDrawable as PictureDrawable)
+                            pd.setColorFilter(Color.RED, PorterDuff.Mode.SRC_IN)
+                            icon.setImageDrawable(pd)
+                            icon.setColorFilter(Color.RED, PorterDuff.Mode.DST_OVER)
+                        }
+                    }
+                } else {
+                    val tintedDrawable = viewThemeUtils.platform.tintDrawable(
+                        requireContext(),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.ic_activity)!!
+                    )
+
+                    icon.setImageDrawable(tintedDrawable)
+                }
             }
         return itemBinding.root
     }

@@ -2417,9 +2417,8 @@ public class FileDataStorageManager {
         contentValues.put(ProviderTableMeta.CAPABILITIES_NOTES_FOLDER_PATH, capability.getNotesFolderPath());
 
         contentValues.put(ProviderTableMeta.CAPABILITIES_DEFAULT_PERMISSIONS, capability.getDefaultPermissions());
-        
-        contentValues.put(ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_CONTEXT_MENU_JSON, 
-                          capability.getDeclarativeUiContextMenuJson());
+
+        contentValues.put(ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_JSON, capability.getDeclarativeUiJson());
 
         return contentValues;
     }
@@ -2605,10 +2604,7 @@ public class FileDataStorageManager {
 
             capability.setDefaultPermissions(getInt(cursor, ProviderTableMeta.CAPABILITIES_DEFAULT_PERMISSIONS));
 
-            capability.setDeclarativeUiContextMenuJson(
-                getString(cursor,
-                          ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_CONTEXT_MENU_JSON)
-                                                      );
+            capability.setDeclarativeUiJson(getString(cursor, ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_JSON));
         }
 
         return capability;

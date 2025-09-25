@@ -80,6 +80,7 @@ import com.owncloud.android.lib.resources.files.SearchRemoteOperation;
 import com.owncloud.android.lib.resources.files.ToggleFavoriteRemoteOperation;
 import com.owncloud.android.lib.resources.status.E2EVersion;
 import com.owncloud.android.lib.resources.status.OCCapability;
+import com.owncloud.android.lib.resources.status.Type;
 import com.owncloud.android.ui.activity.DrawerActivity;
 import com.owncloud.android.ui.activity.FileActivity;
 import com.owncloud.android.ui.activity.FileDisplayActivity;
@@ -129,7 +130,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
@@ -653,7 +653,8 @@ public class OCFileListFragment extends ExtendedListFragment implements
     public void openActionsMenu(final int filesCount, final Set<OCFile> checkedFiles, final boolean isOverflow) {
         throttler.run("overflowClick", () -> {
             final var actionsToHide = FileAction.Companion.getFileListActionsToHide(checkedFiles);
-            List<Endpoint> endpoints = getCapabilities().getDeclarativeUiContextMenu();
+
+            List<Endpoint> endpoints = getCapabilities().getDeclarativeUiEndpoints(Type.CONTEXT_MENU, checkedFiles.iterator().next().getMimeType());
 
             final var childFragmentManager = getChildFragmentManager();
             final var actionBottomSheet = FileActionsBottomSheet.newInstance(filesCount, checkedFiles, isOverflow, actionsToHide, endpoints)
