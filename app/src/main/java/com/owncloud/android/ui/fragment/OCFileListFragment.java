@@ -40,6 +40,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.nextcloud.android.lib.resources.clientintegration.Endpoint;
 import com.nextcloud.android.lib.resources.files.ToggleFileLockRemoteOperation;
 import com.nextcloud.client.account.User;
 import com.nextcloud.client.device.DeviceInfo;
@@ -74,7 +75,6 @@ import com.owncloud.android.lib.common.OwnCloudClient;
 import com.owncloud.android.lib.common.operations.RemoteOperation;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult;
 import com.owncloud.android.lib.common.utils.Log_OC;
-import com.owncloud.android.lib.resources.declarativeui.Endpoint;
 import com.owncloud.android.lib.resources.e2ee.ToggleEncryptionRemoteOperation;
 import com.owncloud.android.lib.resources.files.SearchRemoteOperation;
 import com.owncloud.android.lib.resources.files.ToggleFavoriteRemoteOperation;
@@ -654,7 +654,7 @@ public class OCFileListFragment extends ExtendedListFragment implements
         throttler.run("overflowClick", () -> {
             final var actionsToHide = FileAction.Companion.getFileListActionsToHide(checkedFiles);
 
-            List<Endpoint> endpoints = getCapabilities().getDeclarativeUiEndpoints(Type.CONTEXT_MENU, checkedFiles.iterator().next().getMimeType());
+            List<Endpoint> endpoints = getCapabilities().getClientIntegrationEndpoints(Type.CONTEXT_MENU, checkedFiles.iterator().next().getMimeType());
 
             final var childFragmentManager = getChildFragmentManager();
             final var actionBottomSheet = FileActionsBottomSheet.newInstance(filesCount, checkedFiles, isOverflow, actionsToHide, endpoints)

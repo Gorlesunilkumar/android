@@ -2418,7 +2418,7 @@ public class FileDataStorageManager {
 
         contentValues.put(ProviderTableMeta.CAPABILITIES_DEFAULT_PERMISSIONS, capability.getDefaultPermissions());
 
-        contentValues.put(ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_JSON, capability.getDeclarativeUiJson());
+        contentValues.put(ProviderTableMeta.CAPABILITIES_CLIENT_INTEGRATION_JSON, capability.getClientIntegrationJson());
 
         return contentValues;
     }
@@ -2604,7 +2604,7 @@ public class FileDataStorageManager {
 
             capability.setDefaultPermissions(getInt(cursor, ProviderTableMeta.CAPABILITIES_DEFAULT_PERMISSIONS));
 
-            capability.setDeclarativeUiJson(getString(cursor, ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_JSON));
+            capability.setClientIntegrationJson(getString(cursor, ProviderTableMeta.CAPABILITIES_CLIENT_INTEGRATION_JSON));
         }
 
         return capability;

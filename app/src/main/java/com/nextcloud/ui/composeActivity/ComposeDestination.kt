@@ -11,5 +11,5 @@ import java.io.Serializable
 
 enum class ComposeDestination : Serializable {
     AssistantScreen,
-    DeclarativeUi
+    ClientIntegrationScreen
 }

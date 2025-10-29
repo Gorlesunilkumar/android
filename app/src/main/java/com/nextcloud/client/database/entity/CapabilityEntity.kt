@@ -143,6 +143,6 @@ data class CapabilityEntity(
     val defaultPermissions: Int?,
     @ColumnInfo(name = ProviderTableMeta.CAPABILITIES_USER_STATUS_SUPPORTS_BUSY)
     val userStatusSupportsBusy: Int?,
-    @ColumnInfo(name = ProviderTableMeta.CAPABILITIES_DECLARATIVE_UI_JSON)
-    val declarativeUiJson: String?,
+    @ColumnInfo(name = ProviderTableMeta.CAPABILITIES_CLIENT_INTEGRATION_JSON)
+    val clientIntegrationJson: String?,
 )

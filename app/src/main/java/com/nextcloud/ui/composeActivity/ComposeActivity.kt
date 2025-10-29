@@ -20,7 +20,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.coroutineScope
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.nextcloud.android.lib.resources.clientintegration.ClientIntegrationUI
+import com.nextcloud.android.lib.resources.clientintegration.Element
+import com.nextcloud.android.lib.resources.clientintegration.ElementTypeAdapter
+import com.nextcloud.android.lib.resources.clientintegration.Endpoint
+import com.nextcloud.android.lib.resources.clientintegration.TooltipResponse
 import com.nextcloud.client.assistant.AssistantScreen
 import com.nextcloud.client.assistant.AssistantViewModel
 import com.nextcloud.client.assistant.repository.AssistantRepository
@@ -28,20 +34,16 @@ import com.nextcloud.common.JSONRequestBody
 import com.nextcloud.common.NextcloudClient
 import com.nextcloud.operations.GetMethod
 import com.nextcloud.operations.PostMethod
-import com.nextcloud.ui.DeclarativeUiScreen
+import com.nextcloud.ui.ClientIntegrationScreen
 import com.nextcloud.utils.extensions.getSerializableArgument
+import com.nextcloud.utils.extensions.showToast
 import com.owncloud.android.R
 import com.owncloud.android.databinding.ActivityComposeBinding
-import com.owncloud.android.lib.resources.declarativeui.DeclarativeUI
-import com.owncloud.android.lib.resources.declarativeui.Element
-import com.owncloud.android.lib.resources.declarativeui.ElementTypeAdapter
-import com.owncloud.android.lib.resources.declarativeui.Endpoint
 import com.owncloud.android.lib.resources.status.Method
 import com.owncloud.android.ui.activity.DrawerActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.RequestBody
-import java.net.HttpURLConnection.HTTP_OK
 
 class ComposeActivity : DrawerActivity() {
 
@@ -141,7 +143,7 @@ class ComposeActivity : DrawerActivity() {
                     capability = capabilities
                 )
             }
-        } else if (destination == ComposeDestination.DeclarativeUi) {
+        } else if (destination == ComposeDestination.ClientIntegrationScreen) {
             binding.bottomNavigation.visibility = View.GONE
 
             val endpoint: Endpoint? = intent.getParcelableExtra(ARGS_ENDPOINT)
@@ -195,28 +197,37 @@ class ComposeActivity : DrawerActivity() {
                         TODO("Add error handling here")
                     }
                     test = method.getResponseBodyAsString()
-
-                    val success = result == HTTP_OK
-
-
-                    if (success) {
-                        //DeclarativeUiScreen(parseResult(test))
-                    }
                 }
 
                 if (test != null) {
-                    DeclarativeUiScreen(parseResult(test), baseUrl!!)
+                    var output: ClientIntegrationUI? = null
+                    try {
+                        output = parseResult(test)
+                    } catch (e: Exception) {
+                        try {
+                            val tooltipResponse = parseTooltipResult(test)
+                            showToast(tooltipResponse.tooltip)
+                        } catch (e: Exception) {
+                            showToast("Failed to start action!")
+                            onBackPressed()
+                        }
+                    }
+                    output?.let { ClientIntegrationScreen(it, baseUrl!!) }
                 }
             }
         }
     }
 
-    fun parseResult(response: String?): DeclarativeUI {
+    fun parseResult(response: String?): ClientIntegrationUI {
         val gson =
             GsonBuilder()
                 .registerTypeHierarchyAdapter(Element::class.java, ElementTypeAdapter())
                 .create()
 
-        return gson.fromJson(response, DeclarativeUI::class.java)
+        return gson.fromJson(response, ClientIntegrationUI::class.java)
+    }
+
+    fun parseTooltipResult(response: String?): TooltipResponse {
+        return Gson().fromJson(response, TooltipResponse::class.java)
     }
 }

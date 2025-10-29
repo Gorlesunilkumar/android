@@ -17,18 +17,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.nextcloud.android.lib.resources.clientintegration.Button
+import com.nextcloud.android.lib.resources.clientintegration.ClientIntegrationUI
+import com.nextcloud.android.lib.resources.clientintegration.Element
+import com.nextcloud.android.lib.resources.clientintegration.Layout
+import com.nextcloud.android.lib.resources.clientintegration.Orientation
+import com.nextcloud.android.lib.resources.clientintegration.Text
+import com.nextcloud.android.lib.resources.clientintegration.URL
 import com.nextcloud.utils.extensions.getActivity
-import com.owncloud.android.lib.resources.declarativeui.Button
-import com.owncloud.android.lib.resources.declarativeui.DeclarativeUI
-import com.owncloud.android.lib.resources.declarativeui.Element
-import com.owncloud.android.lib.resources.declarativeui.Layout
-import com.owncloud.android.lib.resources.declarativeui.Orientation
-import com.owncloud.android.lib.resources.declarativeui.Text
-import com.owncloud.android.lib.resources.declarativeui.URL
 import com.owncloud.android.utils.DisplayUtils
 
 @Composable
-fun DeclarativeUiScreen(declarativeUI: DeclarativeUI, baseUrl: String) {
+fun ClientIntegrationScreen(clientIntegrationUI: ClientIntegrationUI, baseUrl: String) {
     val activity = LocalContext.current.getActivity()
 
 
@@ -40,9 +40,9 @@ fun DeclarativeUiScreen(declarativeUI: DeclarativeUI, baseUrl: String) {
         }
 
         Row {
-            if (declarativeUI.root.orientation == Orientation.VERTICAL) {
+            if (clientIntegrationUI.root.orientation == Orientation.VERTICAL) {
                 Column {
-                    declarativeUI.root.rows.forEach { row ->
+                    clientIntegrationUI.root.rows.forEach { row ->
                         Row {
                             row.children.forEach { element ->
                                 DisplayElement(element, baseUrl, activity)
@@ -52,7 +52,7 @@ fun DeclarativeUiScreen(declarativeUI: DeclarativeUI, baseUrl: String) {
                 }
             } else {
                 Row {
-                    declarativeUI.root.rows.forEach { row ->
+                    clientIntegrationUI.root.rows.forEach { row ->
                         Column {
                             row.children.forEach { element ->
                                 DisplayElement(element, baseUrl, activity)
@@ -92,56 +92,56 @@ private fun close(activity: Activity?) {
 
 @Composable
 @Preview
-private fun DeclarativeUiScreenPreviewVertical() {
-    val declarativeUI = DeclarativeUI(
+private fun ClientIntegrationScreenPreviewVertical() {
+    val clientIntegrationUI = ClientIntegrationUI(
         0.1, Layout(
             Orientation.VERTICAL,
             mutableListOf(
-                com.owncloud.android.lib.resources.declarativeui.Row(
+                com.nextcloud.android.lib.resources.clientintegration.Row(
                     listOf(Button("Click", "Primary"), Text("123"))
-                ), com.owncloud.android.lib.resources.declarativeui.Row(
+                ), com.nextcloud.android.lib.resources.clientintegration.Row(
                     listOf(Button("Click2", "Primary"))
-                ), com.owncloud.android.lib.resources.declarativeui.Row(
+                ), com.nextcloud.android.lib.resources.clientintegration.Row(
                     listOf(URL("Analytics report created", "https://nextcloud.com"))
                 )
             )
         )
     )
 
-    DeclarativeUiScreen(
-        declarativeUI, "http://nextcloud.local"
+    ClientIntegrationScreen(
+        clientIntegrationUI, "http://nextcloud.local"
     )
 }
 
 @Composable
 @Preview
-private fun DeclarativeUiScreenPreviewHorizontal() {
-    val declarativeUI = DeclarativeUI(
+private fun ClientIntegrationScreenPreviewHorizontal() {
+    val clientIntegrationUI = ClientIntegrationUI(
         0.1, Layout(
             Orientation.HORIZONTAL, mutableListOf(
-                com.owncloud.android.lib.resources.declarativeui.Row(
+                com.nextcloud.android.lib.resources.clientintegration.Row(
                     listOf(Button("Click", "Primary"), Text("123"))
-                ), com.owncloud.android.lib.resources.declarativeui.Row(
+                ), com.nextcloud.android.lib.resources.clientintegration.Row(
                     listOf(Button("Click2", "Primary"))
-                ), com.owncloud.android.lib.resources.declarativeui.Row(
+                ), com.nextcloud.android.lib.resources.clientintegration.Row(
                     listOf(URL("Analytics report created", "https://nextcloud.com"))
                 )
             )
         )
     )
 
-    DeclarativeUiScreen(declarativeUI, "http://nextcloud.local")
+    ClientIntegrationScreen(clientIntegrationUI, "http://nextcloud.local")
 }
 
 @Composable
 @Preview
-private fun DeclarativeUiScreenPreviewEmpty() {
-    val declarativeUI = DeclarativeUI(
+private fun ClientIntegrationScreenPreviewEmpty() {
+    val clientIntegrationUI = ClientIntegrationUI(
         0.1, Layout(
             Orientation.HORIZONTAL,
             emptyList()
         )
     )
 
-    DeclarativeUiScreen(declarativeUI, "http://nextcloud.local")
+    ClientIntegrationScreen(clientIntegrationUI, "http://nextcloud.local")
 }

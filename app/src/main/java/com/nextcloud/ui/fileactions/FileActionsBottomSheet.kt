@@ -34,6 +34,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.nextcloud.android.common.ui.theme.utils.ColorRole
+import com.nextcloud.android.lib.resources.clientintegration.Endpoint
 import com.nextcloud.client.account.CurrentAccountProvider
 import com.nextcloud.client.di.Injectable
 import com.nextcloud.client.di.ViewModelFactory
@@ -50,7 +51,6 @@ import com.owncloud.android.datamodel.OCFile
 import com.owncloud.android.datamodel.SyncedFolderProvider
 import com.owncloud.android.datamodel.ThumbnailsCacheManager
 import com.owncloud.android.lib.common.OwnCloudClientManagerFactory
-import com.owncloud.android.lib.resources.declarativeui.Endpoint
 import com.owncloud.android.lib.resources.files.model.FileLockType
 import com.owncloud.android.ui.activity.ComponentsGetter
 import com.owncloud.android.utils.DisplayUtils
@@ -218,14 +218,13 @@ class FileActionsBottomSheet :
                 val view = inflateActionView(action)
                 binding.fileActionsList.addView(view)
             }
-            // add declarative ui
+            // add client integration
             if (endpoints != null) {
                 for(val e in endpoints) {
-                    val ui = inflateDeclarativeActionView(e)
+                    val ui = inflateClientIntegrationActionView(e)
                     binding.fileActionsList.addView(ui)
                 }
             }
-          
         }
     }
 
@@ -329,12 +328,12 @@ class FileActionsBottomSheet :
         return itemBinding.root
     }
 
-    private fun inflateDeclarativeActionView(endpoint: Endpoint): View {
+    private fun inflateClientIntegrationActionView(endpoint: Endpoint): View {
         val itemBinding = FileActionsBottomSheetItemBinding.inflate(layoutInflater, binding.fileActionsList, false)
             .apply {
                 root.setOnClickListener {
                     val composeActivity = Intent(context, ComposeActivity::class.java)
-                    composeActivity.putExtra(ComposeActivity.DESTINATION, ComposeDestination.DeclarativeUi)
+                    composeActivity.putExtra(ComposeActivity.DESTINATION, ComposeDestination.ClientIntegrationScreen)
                     composeActivity.putExtra(ComposeActivity.ARGS_ENDPOINT, endpoint)
                     if (viewModel.uiState.value is FileActionsViewModel.UiState.LoadedForSingleFile) {
                         composeActivity.putExtra(
