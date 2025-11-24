@@ -1294,7 +1294,7 @@ class FileDisplayActivity :
         Log_OC.v(TAG, "onResume() start")
 
         super.onResume()
-        if (SettingsActivity.onBackPressed) {
+        if (SettingsActivity.isBackPressed) {
             Log_OC.d(TAG, "User returned from settings activity, skipping reset content logic")
             return
         }
@@ -2784,7 +2784,7 @@ class FileDisplayActivity :
 
     public override fun onStart() {
         super.onStart()
-        if (SettingsActivity.onBackPressed) {
+        if (SettingsActivity.isBackPressed) {
             Log_OC.d(TAG, "User returned from settings activity, skipping reset content logic")
             return
         }
