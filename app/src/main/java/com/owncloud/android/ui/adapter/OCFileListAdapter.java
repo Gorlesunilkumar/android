@@ -938,7 +938,6 @@ public class OCFileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
 
         searchType = null;
-        ocFileListFragmentInterface.toggleEmptyListViewState(mFiles.isEmpty() || mFilesAll.isEmpty());
         activity.runOnUiThread(this::notifyDataSetChanged);
     }
 
